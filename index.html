@@ -1,0 +1,92 @@
+<h1>Amazon <span class="caps">JSON</span> <span class="caps">API</span></h1>
+<p>amazon-json-api is a <span class="caps">JSONP</span>-enabled webservice that serves amazon.com&#8217;s product catalogue in an easily consumable <span class="caps">JSON</span> format.</p>
+<p>You can use amazon-json-api to pull data from Amazon&#8217;s product catalogue and display it on your site.</p>
+<p>The application uses Amazon&#8217;s <a href="http://docs.amazonwebservices.com/AWSEcommerceService/4-0/ApiReference/ItemSearchOperation.html">ItemSearch</a> and the <a href="http://github.com/jugend/amazon-ecs/">amazon-ecs</a> gem behind the scenes to pull in data from Amazon.</p>
+<h2>Installing</h2>
+<p>You&#8217;ll need Sinatra, Rack::Cache, amazon-ecs and ActiveSupport:</p>
+<pre><code>
+gem install sinatra rack-cache activesupport amazon-ecs
+</code>
+</pre>
+<h2>Configuring</h2>
+<p>Put your Amazon <span class="caps">API</span> key and secret in config.yml:</p>
+<pre><code>
+amazon:
+  debug: true
+  key: xxx
+  secret: xxx
+</code>
+</pre>
+<p>Results are by default cached in memory for 24 hours. You can tweak cache settings in config.yml:<br />
+<pre><code>
+cache:
+  ttl: 86400
+  metastore: heap:/
+  entitystore: heap:/
+  #metastore: file:/tmp/cache/rack/meta
+  #entitystore: file:/tmp/cache/rack/body
+  verbose: false
+</code><br />
+</pre></p>
+<h2>Launching</h2>
+<p>Starting the web server is as easy as executing this command:</p>
+<pre><code>
+$ ./app.rb
+</code>
+</pre>
+<p>Tip: use Phusion Passenger and nginx in a production environment.</p>
+<h2>How to</h2>
+<p>All request parameters are forwarded as-is to the Amazon <span class="caps">REST</span>-<span class="caps">API</span>, which means this request:<br />
+<a href="http://localhost:4567/?response_group=Medium&amp;search_index=Books&amp;sort=salesrank&amp;power=title:python+and+programming">http://localhost:4567/?response_group=Medium&amp;search_index=Books&amp;sort=salesrank&amp;power=title:python+and+programming</a></p>
+<p>Translates to the following ItemSearch query:<br />
+<a href="http://webservices.amazon.com/onca/xml?AWSAccessKeyId=xxx&amp;Keywords=&amp;Operation=ItemSearch&amp;Power=title%3Apython%20and%20programming&amp;ResponseGroup=Medium&amp;SearchIndex=Books&amp;Sort=salesrank&amp;Timestamp=2010-04-16T19%3A18%3A47Z&amp;Signature=xxx">http://webservices.amazon.com/onca/xml?AWSAccessKeyId=xxx&amp;Keywords=&amp;Operation=ItemSearch&amp;Power=title%3Apython%20and%20programming&amp;ResponseGroup=Medium&amp;SearchIndex=Books&amp;Sort=salesrank&amp;Timestamp=2010-04-16T19%3A18%3A47Z&amp;Signature=xxx</a></p>
+<p>Note how the signature, timestamp, and access key are all added automatically.</p>
+<h2>Examples</h2>
+<h4>Search books and return <span class="caps">JSON</span></h4>
+<p>This <span class="caps">URL</span> executes a power search for books having the words python and programming in the title:</p>
+<p><a href="http://localhost:4567/?response_group=Medium&amp;search_index=Books&amp;sort=salesrank&amp;power=title:python+and+programming">http://localhost:4567/?response_group=Medium&amp;search_index=Books&amp;sort=salesrank&amp;power=title:python+and+programming</a></p>
+<p>The books are sorted by salesrank. Data is returned as <span class="caps">JSON</span>.</p>
+<p>See the <a href="http://docs.amazonwebservices.com/AWSEcommerceService/4-0/ApiReference/ItemSearchOperation.html">ItemSearch documentation</a> for details.</p>
+<h4>Search books and return <span class="caps">JSONP</span></h4>
+<p>The benefit of using <span class="caps">JSONP</span> is that you can host the webservice on one domain and display the data on as many sites as you need.</p>
+<p>To search for books we use the same <span class="caps">URL</span> as the previous one with the addition of a callback parameter, which tells the webservice to return <span class="caps">JSONP</span> instead of <span class="caps">JSON</span>:<br />
+<a href="http://localhost:4567/?response_group=Medium&amp;search_index=Books&amp;sort=salesrank&amp;power=title:python+and+programming&amp;callback=showBooks">http://localhost:4567/?response_group=Medium&amp;search_index=Books&amp;sort=salesrank&amp;power=title:python+and+programming&amp;callback=showBooks</a></p>
+<p>To retrieve the data you would add this code to your <span class="caps">HTML</span>:<br />
+<pre><code>
+&lt;script defer="defer" type="text/javascript" src="http://localhost:4567/?response_group=ItemAttributes,Images&amp;search_index=Books&amp;sort=salesrank&amp;power=title:xxx&amp;callback=showBooks"&gt;&lt;/script&gt;
+</code></pre></p>
+<p>Or the jQuery equivalent:<br />
+<pre><code>
+$.ajax({
+    type: 'get',
+    url: '/?your query goes here',
+    dataType: 'jsonp',
+    success: function(books) {
+      showBooks(books);
+    }
+})
+</code></pre></p>
+<p>To render the data you would write a <span class="caps">JSONP</span> callback method such as this:</p>
+<pre><code>
+ &lt;script type="text/javascript" defer="defer"&gt;
+  function showBooks(books) {
+    $.each(books, function(index, book) {
+        var title = book.itemattributes.title;
+        var url = book.detailpageurl;
+        var image = book.mediumimage.url;
+        var height = book.mediumimage.height;
+        var width = book.mediumimage.width;
+
+        // Do something smart here
+    });
+  }
+&lt;/script&gt;
+</code>
+</pre>
+<h4>Search the electronics department</h4>
+<p>This <span class="caps">URL</span> searches the electronics department for items containing the keyword &#8220;bluray&#8221;:<br />
+<a href="http://localhost:4567/?response_group=Medium&amp;search_index=Electronics&amp;sort=salesrank&amp;keywords=bluray&amp;callback=showResults">http://localhost:4567/?response_group=Medium&amp;search_index=Electronics&amp;sort=salesrank&amp;keywords=bluray&amp;callback=showResults</a></p>
+<p>See the <a href="http://docs.amazonwebservices.com/AWSEcommerceService/4-0/ApiReference/SearchIndexValues.html">full list of search indexes</a> for more options.</p>
+<p>That&#8217;s it. You can see the webservice in action on this <a href="http://snippets.aktagon.com/languages/94-Objective-C">code snippets</a> page.</p>
+<h2>Author</h2>
+<p><a href="http://christianhellsten.com">Christian Hellsten</a> (<a href="http://aktagon.com">Aktagon Ltd.</a>)</p>

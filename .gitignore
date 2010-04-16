@@ -1,0 +1,6 @@
+log/**/*
+tmp/**/*
+*.pid
+*.swp
+*.output
+.DS_Store

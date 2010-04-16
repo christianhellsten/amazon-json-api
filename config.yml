@@ -1,0 +1,12 @@
+amazon:
+  debug: true
+  key: xxx
+  secret: xxx
+
+cache:
+  ttl: 86400
+  metastore: heap:/
+  entitystore: heap:/
+  #metastore: file:/tmp/cache/rack/meta
+  #entitystore: file:/tmp/cache/rack/body
+  verbose: false

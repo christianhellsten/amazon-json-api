@@ -1,0 +1,133 @@
+h1. Amazon JSON API
+
+amazon-json-api is a JSONP-enabled webservice that serves amazon.com's product catalogue in an easily consumable JSON format.
+
+You can use amazon-json-api to pull data from Amazon's product catalogue and display it on your site. 
+
+The application uses Amazon's "ItemSearch":http://docs.amazonwebservices.com/AWSEcommerceService/4-0/ApiReference/ItemSearchOperation.html and the "amazon-ecs":http://github.com/jugend/amazon-ecs/ gem behind the scenes to pull in data from Amazon.
+
+
+h2. Installing
+
+You'll need Sinatra, Rack::Cache, amazon-ecs and ActiveSupport:
+
+<pre><code>
+gem install sinatra rack-cache activesupport amazon-ecs
+</code>
+</pre>
+
+
+h2. Configuring
+
+Put your Amazon API key and secret in config.yml:
+
+<pre><code>
+amazon:
+  debug: true
+  key: xxx
+  secret: xxx
+</code>
+</pre>
+
+Results are by default cached in memory for 24 hours. You can tweak cache settings in config.yml:
+<pre><code>
+cache:
+  ttl: 86400
+  metastore: heap:/
+  entitystore: heap:/
+  #metastore: file:/tmp/cache/rack/meta
+  #entitystore: file:/tmp/cache/rack/body
+  verbose: false
+</code>
+</pre>
+
+h2. Launching
+
+Starting the web server is as easy as executing this command:
+
+<pre><code>
+$ ./app.rb
+</code>
+</pre>
+
+Tip: use Phusion Passenger and nginx in a production environment.
+
+h2. How to
+
+All request parameters are forwarded as-is to the Amazon REST-API, which means this request:
+"http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming":http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming
+
+Translates to the following ItemSearch query:
+"http://webservices.amazon.com/onca/xml?AWSAccessKeyId=xxx&Keywords=&Operation=ItemSearch&Power=title%3Apython%20and%20programming&ResponseGroup=Medium&SearchIndex=Books&Sort=salesrank&Timestamp=2010-04-16T19%3A18%3A47Z&Signature=xxx":http://webservices.amazon.com/onca/xml?AWSAccessKeyId=xxx&Keywords=&Operation=ItemSearch&Power=title%3Apython%20and%20programming&ResponseGroup=Medium&SearchIndex=Books&Sort=salesrank&Timestamp=2010-04-16T19%3A18%3A47Z&Signature=xxx
+
+Note how the signature, timestamp, and access key are all added automatically.
+
+
+h2. Examples
+
+h4. Search books and return JSON
+
+This URL executes a power search for books having the words python and programming in the title:
+
+"http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming":http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming
+
+The books are sorted by salesrank. Data is returned as JSON.
+
+See the "ItemSearch documentation":http://docs.amazonwebservices.com/AWSEcommerceService/4-0/ApiReference/ItemSearchOperation.html for details.
+
+h4. Search books and return JSONP
+
+The benefit of using JSONP is that you can host the webservice on one domain and display the data on as many sites as you need.
+
+To search for books we use the same URL as the previous one with the addition of a callback parameter, which tells the webservice to return JSONP instead of JSON:
+"http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming&callback=showBooks":http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming&callback=showBooks
+
+To retrieve the data you would add this code to your HTML:
+<pre><code>
+<script defer="defer" type="text/javascript" src="http://localhost:4567/?response_group=ItemAttributes,Images&search_index=Books&sort=salesrank&power=title:xxx&callback=showBooks"></script>
+</code></pre>
+
+Or the jQuery equivalent:
+<pre><code>
+$.ajax({
+    type: 'get',
+    url: '/?your query goes here',
+    dataType: 'jsonp',
+    success: function(books) {
+      showBooks(books);
+    }
+})
+</code></pre>
+
+To render the data you would write a JSONP callback method such as this:
+
+<pre><code>
+ <script type="text/javascript" defer="defer">
+  function showBooks(books) {
+    $.each(books, function(index, book) {
+        var title = book.itemattributes.title;
+        var url = book.detailpageurl;
+        var image = book.mediumimage.url;
+        var height = book.mediumimage.height;
+        var width = book.mediumimage.width;
+
+        // Do something smart here
+    });
+  }
+</script>
+</code>
+</pre>
+
+h4. Search the electronics department
+
+This URL searches the electronics department for items containing the keyword "bluray":
+"http://localhost:4567/?response_group=Medium&search_index=Electronics&sort=salesrank&keywords=bluray&callback=showResults":http://localhost:4567/?response_group=Medium&search_index=Electronics&sort=salesrank&keywords=bluray&callback=showResults
+
+See the "full list of search indexes":http://docs.amazonwebservices.com/AWSEcommerceService/4-0/ApiReference/SearchIndexValues.html for more options.
+
+That's it. You can see the webservice in action on this "code snippets":http://snippets.aktagon.com/languages/94-Objective-C page.
+
+h2. Author
+
+"Christian Hellsten":http://christianhellsten.com ("Aktagon Ltd.":http://aktagon.com)
+
