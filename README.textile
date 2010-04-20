@@ -77,7 +77,7 @@ See the "ItemSearch documentation":http://docs.amazonwebservices.com/AWSEcommerc
 
 h4. Search books and return JSONP
 
-The benefit of using JSONP is that you can host the webservice on one domain and display the data on as many sites as you need.
+The benefit of using JSONP is that you can host the webservice on one domain and use it on as many other domains as you need.
 
 To search for books we use the same URL as the previous one with the addition of a callback parameter, which tells the webservice to return JSONP instead of JSON:
 "http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming&callback=showBooks":http://localhost:4567/?response_group=Medium&search_index=Books&sort=salesrank&power=title:python+and+programming&callback=showBooks
