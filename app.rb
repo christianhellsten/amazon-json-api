@@ -2,9 +2,8 @@
 require 'json'
 require 'yaml'
 require 'active_support' # Hash.to_options and Hash.to_xml
-require 'sinatra'
+require 'sinatra/base'
 require 'rack/cache'
-gem 'sinatra', '~> 1'
 
 CONFIG = YAML.load_file(File.join(File.dirname(__FILE__), "config.yml"))
 
