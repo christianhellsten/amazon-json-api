@@ -15,7 +15,7 @@ class AmazonAWS
     #
     def search(options)
       res = Amazon::Ecs.item_search(options[:keywords], options)
-      raise ApiException.new(res.error) if res.has_error?
+      raise ApiException, res.error if res.has_error?
       return res.items
     end
   end
